@@ -4750,6 +4750,10 @@ pub(super) fn get_pids_with_first_arg_by_wmic<S1: AsRef<str>, S2: AsRef<str>>(
         .unwrap_or_default()
 }
 
+pub fn init_branding() {
+    *config::APP_NAME.write().unwrap() = "Spotify".to_owned();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

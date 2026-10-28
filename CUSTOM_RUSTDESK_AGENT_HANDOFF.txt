@@ -1,0 +1,694 @@
+**Agent prompt: build a custom-branded RustDesk Windows client, validate it, then offer precise development-environment cleanup**
+
+Read this entire prompt before making changes. This is a reusable engineering recipe, not a transcript, a transfer of another person's app installation, or a statement about this computer's existing configuration. Build a new client from the official source using this owner's chosen name and artwork.
+
+**Ask for the app name and icon first**
+
+Before applying branding or installing tools, explicitly ask the owner both questions:
+
+1. **What exact custom application name do you want, including spelling and capitalization?** Do not assume a name from the workspace folder, this prompt's filename, another user's project, or a previous example.
+2. **Which image should be used as the icon? Please provide the local path to your PNG/JPG, or attach the image if this interface supports attachments.** Do not reuse someone else's character, logo or artwork by default.
+
+Wait for the name and artwork before making dependent changes. You may perform read-only environment checks while waiting. Once supplied, summarize the exact name and icon path and validate that they are usable. Do not repeatedly ask for an input already supplied explicitly for this project.
+
+Use these placeholders consistently:
+
+| Placeholder | Meaning |
+| --- | --- |
+| `APP_NAME` | The owner's chosen application name, never a literal default brand |
+| `APP_EXE` | The matching executable filename, normally `APP_NAME.exe` |
+| `APP_NAMESPACE` | The app-data/extraction namespace actually derived by upstream code; inspect it rather than guessing |
+| `ICON_INPUT` | The owner's actual artwork path |
+| `CustomClientProject` | An example project folder; choose a suitable approved location |
+| `C:\CustomClientBuild` | An example dedicated temporary tool root; check that it does not contain unrelated files |
+| `client` | The source checkout folder in this recipe; not the product name |
+
+Tokens inside Rust, CMake, resource and text examples must be replaced with properly escaped chosen values before compiling. PowerShell variables such as `$AppName` must be initialized from those confirmed inputs. Never execute placeholder paths literally. Validate the name against Windows filename rules, reserved names, and the CMake target rules used by this source. If it needs a different filesystem/target spelling, explain the constraint and agree that mapping with the owner before changing it; do not silently choose a different brand. The simplest tested naming route uses one valid name for APP_NAME, the CMake binary target and the executable stem. Names requiring separate display, target and executable names need additional inspection and validation.
+
+In Rust, `config::APP_NAME` is an existing upstream identifier and must stay exactly as written. Replace the quoted `"APP_NAME"` placeholder value, not the identifier. The same distinction applies to other technical source names that happen to resemble placeholders.
+
+**The assignment**
+
+Build a Windows x64 RustDesk client with the chosen name and custom icon. Preserve remote-support functionality, server compatibility, authentication, consent prompts, visible session indicators, copyright/license notices and upstream attribution. Keep a clear description such as `APP_NAME Remote Support (RustDesk)`. Leave technical protocol/library identifiers intact. Do not perform a global replacement of every occurrence of RustDesk.
+
+A free source build can use an existing free self-hosted RustDesk server; Server Pro is not required for this route. The connecting participant can normally keep a compatible standard client. Verify that expectation with a real consented connection test rather than promising compatibility in advance.
+
+Do the engineering work within your available tools and permissions, including environment setup, focused source changes, compilation, complete packaging and validation. Explain the actual permission points. Windows UAC prompts may require the owner's interaction. Keep updates useful during long downloads/builds and report failures honestly.
+
+After the owner confirms the connection test succeeded, inventory the development files/tools and ask for cleanup instructions with a concrete keep/remove list and space estimate. Only after cleanup is authorized, uninstall project-added development components and remove verified temporary files while preserving the app, settings, identity, shared runtimes and requested recovery backups.
+
+**Work from the official repository; no previous session or private archive is required**
+
+This prompt is sufficient as a specification for a capable agent to create its own small helpers. It does not require the original person's source ZIP, executable, configuration, reports, logs, artwork or machine-specific uninstall scripts. Do not ask for those as prerequisites.
+
+Create the helper scripts described below in `build-support` if they are not present. If the owner supplies helpers, read and adapt them before use. Every helper must accept or derive the actual project/tool roots, check native exit codes, and avoid hardcoded user-profile paths, installation IDs or pre-existing tool assumptions. Commands invoking a helper are its required interface; implement and inspect it before invocation rather than assuming an unavailable file exists.
+
+Keep build notes about this new project only. Never include server private keys, unattended passwords, application identity/configuration contents, user-profile data or unrelated work in reports, archives or chat. Record a SHA256 for the new executable and new source archive; there is no expected previous executable hash to match. A checksum identifies a file, not its safety or reproducibility across machines.
+
+**1. Establish this computer's baseline**
+
+Before installing or removing anything:
+
+1. Read the applicable workspace `AGENTS.md`, repository instructions and the pinned Windows build workflow.
+2. Check Windows version and CPU architecture. This recipe targets native Windows x64 with MSVC; do not silently apply it to ARM64 or x86.
+3. Choose short, dedicated project and tool roots. Examples are `C:\Work\CustomClientProject` and `C:\CustomClientBuild`. Resolve them and check for existing contents before creating or using them. Prefer a local path outside a cloud-sync folder for large generated build trees.
+4. Find Git, Python, Visual Studio/Build Tools instances, MSVC/SDK versions, Rust, Flutter, LLVM, CMake, Ninja and NASM. Record paths and versions, reuse compatible existing tools, and distinguish them from tools installed for this project.
+5. For every project-specific installation, record the exact installer/uninstaller registration, instance ID, version, path, install date and command used. Save free disk space before setup and before cleanup.
+6. Inspect existing RustDesk/custom-client installations and active sessions without printing secrets. Do not stop an existing remote session, overwrite an installation or merge identities as a setup shortcut.
+7. Keep the computer's security protections enabled and respond to any actual new detection according to the product's instructions.
+
+A first setup can take several hours. Allow roughly 30-50 GB of free headroom for tool downloads, dependency builds, caches and generated output; measure actual usage. The final application is much smaller. As a conservative starting point, use Cargo concurrency 4 and vcpkg concurrency 6 on a machine with sufficient memory, and lower these for a smaller machine.
+
+If Git or Python is missing, install an appropriate official distribution through an approved mechanism and record whether it was project-added. Do not install an entire unrelated compiler distribution for one utility. Explain required machine-wide installations and use the real approval mechanism. Do not reboot or close unsaved applications automatically. If a UAC prompt is canceled, stop that privileged operation and ask whether the owner wants to retry.
+
+**2. Pin the source and create a reviewable local branch**
+
+Official repository:
+
+```text
+https://github.com/rustdesk/rustdesk
+```
+
+The reference Windows recipe uses these pins:
+
+```text
+Release label: RustDesk 1.5.0
+Commit: fada664df7a294d1d1a9ca3e7cd3637069122f17
+Local branch: custom-branding
+hbb_common submodule: 229b904508364c8997aad0fb5af57effac859f60
+```
+
+These are reproduction pins, not a claim that they are the latest release. Inspect the pinned source and official documentation for compatibility with the current host. Do not silently migrate to another RustDesk release or mix instructions from different releases; explain and validate a required change.
+
+From the selected project root, checking every native exit code:
+
+```powershell
+git clone --recurse-submodules https://github.com/rustdesk/rustdesk.git client
+git -C .\client checkout fada664df7a294d1d1a9ca3e7cd3637069122f17
+git -C .\client submodule update --init --recursive
+git -C .\client switch -c custom-branding
+git -C .\client rev-parse HEAD
+git -C .\client\libs\hbb_common rev-parse HEAD
+```
+
+A local branch is sufficient. Creating a hosted fork, publishing code or pushing a release requires the corresponding account authorization. Leave `libs/hbb_common` pinned and unchanged; the focused Windows branding does not need a submodule modification.
+
+Use a layout such as:
+
+```text
+CustomClientProject\
+  client\              pinned source checkout / local branch
+  build-support\       project-local inspected helper scripts and notes
+  branding\            generated custom icon assets
+  release\             complete executable, source archive, checksums and reports
+  artwork.png          optional copy of the owner's supplied image
+```
+
+`artwork.png` is a generic example path, not an instruction to rename a JPG's extension. You may reference the supplied original image directly. Build the unchanged baseline before applying the custom product patch. Do not copy another project's generated files or unrelated Android changes into the checkout.
+
+**3. Prepare an isolated build environment**
+
+These are the versions used successfully, not a claim that they are the latest versions:
+
+| Component | Reference version or pin |
+| --- | --- |
+| Rust | 1.75.0, `x86_64-pc-windows-msvc`, plus rustfmt |
+| rustup bootstrap | 1.29.1 |
+| Flutter | 3.24.5 stable |
+| Dart | 3.5.4, supplied by that Flutter SDK |
+| LLVM / Clang | 15.0.6 |
+| vcpkg | `9e593bb18ea69cc5095e012465dcd675a822ed0d` |
+| Visual Studio Build Tools | 2022; reference servicing release 17.14.42 |
+| MSVC tool directory | 14.44.35207 in the reference recipe |
+| Windows SDK | 10.0.26100; installed bundle identified as 10.0.26100.7705 |
+| cargo-expand | 1.0.95, locked installation |
+| flutter_rust_bridge_codegen | 1.80.1, feature `uuid`, locked installation |
+| Python | Python 3.12; reuse a suitable existing installation |
+| Packaging Brotli | Python package `brotli==1.2.0` in an isolated venv |
+
+CMake 3.29.3 and NASM were compatible with the reference build. Their incidental availability through another compiler distribution is not a requirement. Ensure compatible CMake/Ninja/NASM are available from trusted official sources or the required tool manager. vcpkg downloaded its own CMake 4.4.0 in the reference dependency preparation; inspect the actual pinned tool metadata. Verify which tools the actual build resolves. MSVC `cl.exe` and `link.exe` must be used for the Windows MSVC target.
+
+Install Visual Studio C++ Build Tools with the C++ workload, ATL and a suitable Windows SDK, reusing an existing compatible instance if present. A setup command for that workload is:
+
+```powershell
+winget install --id Microsoft.VisualStudio.2022.BuildTools --exact --source winget --accept-package-agreements --accept-source-agreements --override '--wait --passive --norestart --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.ATL --includeRecommended'
+```
+
+Validate official package metadata and the installed version on the receiving computer. This command can resolve a different servicing version later. Do not install unrelated Android tooling for this Windows target. A runtime installer may request a reboot; first determine whether the tools function, and do not restart the computer without the owner agreeing.
+
+Implement or adapt `prepare-toolchain.ps1` so it accepts `-Component Rust`, `Flutter`, `LLVM` or `Vcpkg`, and `-ToolsRoot`. Inspect it before use. Its required behavior is:
+
+- Install task-local Rust/Cargo and Flutter under the dedicated tool root.
+- Use rustup's `--no-modify-path`; avoid permanent global PATH edits.
+- Obtain Flutter 3.24.5 from its official Windows release manifest and verify its manifest SHA256.
+- Obtain the pinned Rust bootstrap below and verify its SHA256.
+- Obtain LLVM from the official `llvm-project` 15.0.6 release and verify the resulting Clang version. Do not claim an installer is checksum-pinned unless its hash is actually recorded and checked. Verify official provenance/signature/checksum where available before execution.
+- Clone/bootstrap vcpkg at the pinned commit, prefetch the two historical port trees below, and establish a dedicated binary cache.
+- Fail on a wrong tool version or nonzero native exit code.
+
+With the inspected helpers beside the checkout, these are the preparation entry points from the project root. Run only the components needed on the receiving machine, with the actual approved tool root:
+
+```powershell
+& .\build-support\prepare-toolchain.ps1 -Component Rust -ToolsRoot 'C:\CustomClientBuild'
+& .\build-support\prepare-toolchain.ps1 -Component Flutter -ToolsRoot 'C:\CustomClientBuild'
+& .\build-support\prepare-toolchain.ps1 -Component LLVM -ToolsRoot 'C:\CustomClientBuild'
+& .\build-support\prepare-toolchain.ps1 -Component Vcpkg -ToolsRoot 'C:\CustomClientBuild'
+```
+
+For a standalone setup, the helper must implement the following details rather than rely on an absent SDK:
+
+- Rust: use the pinned rustup bootstrap below with task-local `CARGO_HOME` and `RUSTUP_HOME`, `--no-modify-path --profile minimal --default-host x86_64-pc-windows-msvc --default-toolchain 1.75.0`, then add rustfmt and verify `rustc -V`/`cargo -V` using those explicit paths.
+- Flutter: select stable 3.24.5 from `https://storage.googleapis.com/flutter_infra_release/releases/releases_windows.json`, download its official Windows ZIP, compare its SHA256 with the manifest, expand under the tool root and verify `flutter --version --machine` reports Flutter 3.24.5/Dart 3.5.4.
+- LLVM: obtain `LLVM-15.0.6-win64.exe` from `https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.6/LLVM-15.0.6-win64.exe`, verify official provenance/signature/checksum where available, use its normal installer targeting the dedicated `LLVM` subfolder, and verify `clang --version`. Retain its registered uninstall command for cleanup.
+- vcpkg: clone `https://github.com/microsoft/vcpkg.git`, check out the pinned commit, verify HEAD, and run `bootstrap-vcpkg.bat -disableMetrics`. Keep downloads, installed packages and binary cache task-local. Partial clone is optional; if used, ensure required historical objects can be fetched before children lose necessary proxy/CA settings.
+- Downloads: write to a `.partial` file, verify before using, then promote to the intended filename. Check a cached file rather than trusting its existence. Do not replace mismatching content silently.
+
+Pinned Rust bootstrap:
+
+```text
+https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-pc-windows-msvc/rustup-init.exe
+SHA256: 6f4bef66261261fcb43131be8720bab817d403a09edec7455c371974b90bdb7e
+```
+
+A vcpkg partial clone can fail to lazily fetch historical port trees from a child with a sanitized network environment. Prefetch the following trees with parent Git if the pinned ports require them:
+
+```text
+47db5211b49a66cf05a86858cddd41d2c4b5d8a9
+95b6f37a43dab098bf4be5c84e15e47a86cf7960
+```
+
+The helper can materialize them with `git -C <vcpkgRoot> archive -o <download-path> <tree>`. Preserve approved proxy/CA environment settings where the tool requires them; do not disable TLS verification.
+
+**4. Enter the correct native environment in each new build shell**
+
+Implement or adapt `enter-build-env.ps1` with the behavior below; inspect it before use. With the standard project layout, from the source checkout:
+
+```powershell
+. ..\build-support\enter-build-env.ps1 -ToolsRoot 'C:\CustomClientBuild' -Native
+```
+
+Its order matters: locate a compatible Visual Studio instance using `vswhere`, import the Developer PowerShell module, and enter the amd64 host/target environment first. Then set the task-local variables, because Developer PowerShell can overwrite `VCPKG_ROOT`.
+
+The task-local environment should be equivalent to:
+
+```powershell
+$toolsRoot = 'C:\CustomClientBuild'
+$env:CARGO_HOME = Join-Path $toolsRoot 'cargo'
+$env:RUSTUP_HOME = Join-Path $toolsRoot 'rustup'
+$env:VCPKG_ROOT = Join-Path $toolsRoot 'vcpkg'
+$env:LIBCLANG_PATH = Join-Path $toolsRoot 'LLVM\bin'
+$env:PUB_CACHE = Join-Path $toolsRoot 'pub-cache'
+$env:VCPKG_DEFAULT_TRIPLET = 'x64-windows-static'
+$env:VCPKG_DEFAULT_HOST_TRIPLET = 'x64-windows-static'
+$env:CARGO_BUILD_JOBS = '4'
+$env:VCPKG_MAX_CONCURRENCY = '6'
+$env:VCPKG_BINARY_SOURCES = 'clear;files,' + (Join-Path $toolsRoot 'vcpkg-binary-cache') + ',readwrite'
+$env:PATH = @(
+    (Join-Path $env:CARGO_HOME 'bin'),
+    (Join-Path $toolsRoot 'flutter\bin'),
+    $env:LIBCLANG_PATH,
+    $env:PATH
+) -join ';'
+```
+
+Keep these changes process-local. Do not repurpose system variables such as HOME or CODEX_HOME. Verify resolved executable paths and versions before the expensive build.
+
+The native helper should resolve `vswhere.exe` under the Visual Studio Installer directory, query an instance with `Microsoft.VisualStudio.Component.VC.Tools.x86.x64`, import `Common7\Tools\Microsoft.VisualStudio.DevShell.dll` from that instance, and use `Enter-VsDevShell -VsInstallPath <resolved-instance> -SkipAutomaticLocation -Arch amd64 -HostArch amd64`. Validate `cl.exe` and `link.exe` resolve to MSVC, not similarly named tools from another installation. Re-enter this environment in every fresh build shell.
+
+**5. Prepare native dependencies, Flutter and bridge generation**
+
+From the source checkout in the native environment:
+
+```powershell
+cargo fetch --locked
+& "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows-static "--x-install-root=$env:VCPKG_ROOT\installed" --clean-buildtrees-after-build
+```
+
+The pinned manifest brings in native packages including FFmpeg, AOM, libvpx, libyuv, JPEG and Opus. This stage can take tens of minutes. Capture full logs and diagnose actual failures. Warnings about Opus CRT linkage or libyuv compilation do not alone establish a failed build; evaluate linkage and runtime evidence. Do not suppress warnings or introduce unrelated port changes merely for cleaner output.
+
+Flutter desktop plugins need symbolic-link support. Check the receiving machine's existing configuration. If a temporary Windows Developer Mode change is actually needed, get the owner's explicit approval and record the previous state of:
+
+```text
+HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock
+AllowDevelopmentWithoutDevLicense
+```
+
+Restore the receiving machine's previous state after the final Flutter build, including on failure or cancellation. Record whether the value was absent, disabled or enabled, and restore that exact previous state. Do not blindly set it to 0 if the owner already had it enabled. Do not leave development settings on simply because a build stopped midway.
+
+Then:
+
+```powershell
+Push-Location flutter
+flutter precache --windows
+flutter pub get
+Pop-Location
+```
+
+Flutter 3.24.5 may regenerate `flutter/pubspec.lock` with SDK-compatible transitive and test packages. Record and review that diff separately from branding; avoid broad dependency upgrades.
+
+The pinned release used a RustDesk Flutter engine replacement and dropdown patch. Implement or adapt `prepare-flutter-runtime.ps1` using the pinned details below and the matching upstream workflow, then inspect it before running it:
+
+```powershell
+& ..\build-support\prepare-flutter-runtime.ps1 -ToolsRoot 'C:\CustomClientBuild'
+```
+
+Pinned engine details:
+
+```text
+GitHub asset ID: 210168939
+URL used: https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip
+SHA256: ec8cabf36ee4ff24c8d98de25b00e70781eb03876265aee84d0fe554a110036e
+Destination: <FlutterRoot>\bin\cache\artifacts\engine\windows-x64-release
+Patch: .github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff
+```
+
+The engine helper must download and verify the ZIP, expand it into the precached engine directory, and apply the listed patch to the Flutter SDK with Git. The download URL is mutable. If its content no longer matches, stop and investigate official release assets; do not remove the checksum check or substitute an arbitrary engine. Check whether the patch is already applied with a reverse check before applying it. On Windows PowerShell 5.1, native stderr from an expected unsuccessful reverse check must not be mistaken for an unhandled script failure.
+
+Install the bridge tools and generate the bindings:
+
+```powershell
+cargo install cargo-expand --version 1.0.95 --locked
+cargo install flutter_rust_bridge_codegen --version 1.80.1 --features uuid --locked
+$env:RUST_LOG = 'info'
+flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart --c-output ./flutter/macos/Runner/bridge_generated.h --skip-add-mod-to-lib --llvm-path 'C:\CustomClientBuild\LLVM'
+Copy-Item -LiteralPath .\flutter\macos\Runner\bridge_generated.h -Destination .\flutter\ios\Runner\bridge_generated.h -Force
+cargo build --locked --release -p dylib_virtual_display
+```
+
+Adapt the LLVM path. Use process-local `RUST_LOG=info`; an incompatible inherited logging filter can make this older generator panic. Generated Rust/Dart/freezed files are ignored by Git in places, so confirm generation actually finished. The Windows build script later copies `target/release/deps/dylib_virtual_display.dll`; ensure it exists.
+
+**6. Build the unchanged baseline first**
+
+Do this before applying the custom product patch. It separates environment problems from introduced changes:
+
+```powershell
+python .\build.py --portable --flutter --skip-portable-pack --hwcodec --vram
+```
+
+Capture stdout, stderr, native exit code and the exact command. If a native dependency such as zstd-sys fails with truncated output, obtain the full failing command and log before changing source. A controlled unchanged retry can distinguish a transient/incomplete run; do not claim an unexplained failure has a known cause or add speculative workarounds.
+
+Check the unchanged baseline runner, libraries and assets under:
+
+```text
+flutter\build\windows\x64\runner\Release
+```
+
+If safe to execute after antivirus checks and without interfering with an existing stock client, briefly launch the baseline with `--no-server`. Verify its window appears and responds. Close only the process you created. Do not kill all RustDesk processes. If isolation is not possible because the owner already has a live instance, record that runtime verification is deferred instead of falsely reporting success.
+
+Preserve a baseline bundle under the dedicated temporary tool root before refreshing generated output for the custom build. Avoid screenshots containing IDs, temporary passwords or server/private configuration. A small title-bar capture is enough for a branding check.
+
+**7. Make the focused Windows branding patch**
+
+Inspect the pinned source and keep the patch small and reviewable. Do not perform a repository-wide replacement of `RustDesk`.
+
+Apply these focused product changes:
+
+| File | Required change |
+| --- | --- |
+| `src/platform/windows.rs` | Small Windows initializer setting the existing `config::APP_NAME` lock to the chosen name |
+| `src/core_main.rs` | Windows-only one-line hook before initialization/config loading |
+| `flutter/windows/CMakeLists.txt` | `BINARY_NAME` becomes `APP_NAME` |
+| `flutter/windows/runner/Runner.rc` | Product/version metadata uses APP_NAME with clear RustDesk remote-support description |
+| `flutter/lib/desktop/widgets/tabbar_widget.dart` | Desktop title reads the existing `appName` accessor |
+| `libs/portable/Cargo.toml` | Wrapper winres metadata matches the branded runner |
+| `flutter/windows/runner/resources/app_icon.ico` | Supplied custom Windows icon |
+| `res/icon.ico` | Supplied icon for the portable wrapper |
+| New `flutter/assets/icon.png` and `icon.ico` | Existing UI/tray/shortcut asset lookup paths |
+
+In `src/platform/windows.rs`, where `config` is already imported, add a function equivalent to:
+
+```rust
+pub fn init_branding() {
+    *config::APP_NAME.write().unwrap() = "APP_NAME".to_owned();
+}
+```
+
+At the beginning of `core_main()` in `src/core_main.rs`, before `global_init()` and `load_custom_client()`:
+
+```rust
+#[cfg(windows)]
+crate::platform::windows::init_branding();
+```
+
+The repository allows unwrap for poisoned lock acquisition; do not introduce unwraps for ordinary production errors. Keep Windows-specific implementation in the platform module. Leave the signed custom-client verification intact, even if valid signed custom configuration can subsequently set its own name.
+
+In `flutter/windows/CMakeLists.txt`:
+
+```cmake
+set(BINARY_NAME "APP_NAME")
+```
+
+Keep technical project/library names such as `project(rustdesk)`, `librustdesk.dll`, FFI exports and protocol identifiers unchanged.
+
+Set the runner metadata consistently, replacing APP_NAME with the confirmed value:
+
+```text
+CompanyName:       APP_NAME community build
+FileDescription:   APP_NAME Remote Support (RustDesk)
+InternalName:      APP_NAME
+OriginalFilename:  APP_NAME.exe
+ProductName:       APP_NAME
+```
+
+Preserve the upstream copyright line and version generation. Do not claim the community build is issued or signed by the upstream company. In the portable crate's `[package.metadata.winres]`, use the same product/company/description/internal/original-filename values while retaining its original copyright and technical crate name.
+
+Change the desktop tab title from a fixed `const Text("RustDesk", ...)` to:
+
+```dart
+Text(
+  appName,
+  style: const TextStyle(fontSize: 13),
+)
+```
+
+Use the existing imported accessor. Most other visible name substitutions already follow the app name through upstream code. Keep the Powered by RustDesk attribution. Do not edit translation keys or unrelated translation files.
+
+Inspect the application manifests instead of assuming they contain a display name. In this pinned recipe their relevant contents are DPI, common-controls and OS compatibility declarations, so no branding edit is needed there. A portable splash label that already says `Loading...` also does not need a cosmetic edit.
+
+Escape the chosen name independently for Rust string literals, CMake, TOML, Windows resource strings, XML if applicable, and PowerShell; shell quoting and language escaping are different operations. Do not insert untrusted text into a constructed command string. Keep version generation and existing legal notices intact. Validate the diff with `git diff --check`, review the actual changed paths, and confirm the submodule commit is unchanged before compiling the custom build.
+
+**8. Convert and install the owner's artwork assets**
+
+Use the image explicitly chosen by this owner. Inspect it and preserve its appearance; do not redraw it, choose a character/logo automatically, or use someone else's artwork from a reference project. A PNG with transparency is suitable. JPG input is also usable and should be decoded as JPG rather than renamed to a PNG extension.
+
+Implement `build-support/prepare-icons.py` with an explicit image input argument and optional output-directory argument. Use Pillow in an existing suitable Python environment or a project-local venv, recording any installed package version. Its conversion should:
+
+1. Open the actual supplied image, apply EXIF orientation and convert to RGBA.
+2. Pad it onto a transparent square using the longer dimension, centering the original without stretching.
+3. Save a square source PNG and a multi-resolution Windows ICO.
+4. Export PNG previews at 16, 24, 32, 48, 64, 128 and 256 pixels using a suitable resampling filter.
+5. Reopen the ICO and verify that all seven sizes are included. Check small-icon readability with the owner if the artwork becomes unclear.
+
+Expected generic outputs:
+
+```text
+branding/custom-client-source.png
+branding/custom-client.ico
+branding/custom-client-16.png, -24.png, -32.png, -48.png, -64.png, -128.png, -256.png
+```
+
+For example, from the project root after implementing that interface:
+
+```powershell
+$IconInput = 'ACTUAL_OWNER_SUPPLIED_IMAGE_PATH'
+python .\build-support\prepare-icons.py --input $IconInput --output .\branding
+```
+
+Use the Python environment that actually contains Pillow. Install it in a task-local environment if needed, not into an unrelated global Python installation. Keep the original image intact.
+
+From the source checkout, copy the ICO to all three Windows lookup paths and the PNG to the UI path:
+
+```powershell
+Copy-Item ..\branding\custom-client.ico .\res\icon.ico -Force
+Copy-Item ..\branding\custom-client.ico .\flutter\windows\runner\resources\app_icon.ico -Force
+Copy-Item ..\branding\custom-client.ico .\flutter\assets\icon.ico -Force
+Copy-Item ..\branding\custom-client-source.png .\flutter\assets\icon.png -Force
+```
+
+The repo broadly ignores image files. Explicitly retain new assets in the diff and source archive; `git add -N -f` can expose the new files for review without creating a commit. Do not mistake an ignored file existing locally for inclusion in the deliverable. Hash the generated assets and compare them with their packaged counterparts later.
+
+**9. Rebuild and fix only demonstrated build problems**
+
+Preserve the baseline, then safely refresh only generated output. Validate exact absolute paths before any recursive delete, and ensure the directory is not a reparse point or the currently running app's directory.
+
+When rebuilding a previously generated stock runner after changing BINARY_NAME, CMake can retain this cached value:
+
+```text
+CMAKE_INSTALL_PREFIX=$<TARGET_FILE_DIR:rustdesk>
+```
+
+If this produces `No target "rustdesk"`, remove only the generated `flutter/build/windows/x64/CMakeCache.txt` before the next build after checking its resolved path. A fresh generated tree may not have the problem. Prefer this narrow cache fix to changing working CMake/plugin source.
+
+Run the same custom build command:
+
+```powershell
+python .\build.py --portable --flutter --skip-portable-pack --hwcodec --vram
+```
+
+If the Rust library already succeeded and only Flutter needs retrying:
+
+```powershell
+python .\build.py --portable --flutter --skip-portable-pack --hwcodec --vram --skip-cargo
+```
+
+Do not use `--skip-cargo` after changing Rust source unless that changed library has already been rebuilt. Do not mistake a successful Rust phase for a complete Flutter/package build; inspect each phase and its exit status separately.
+
+Verify the output is `APP_NAME.exe` and all required DLLs/assets are present. Check `ProductName`, `FileDescription`, `InternalName`, `OriginalFilename`, icon asset hashes and normal startup without altering consent behavior.
+
+On Windows PowerShell 5.1, native stderr can interact badly with `$ErrorActionPreference='Stop'`, and asynchronous process objects can expose a null exit code if mishandled. Use reliable logging and actual exit-code checks. When using Start-Process, acquire the process handle before WaitForExit and refresh afterward; do not interpret a null exit code as success. Start-Process `-Wait` can also wait for descendants such as reusable build servers. Diagnose an idle owned launcher using artifact/log evidence before stopping only that launcher; never kill all Python, PowerShell or MSBuild processes.
+
+Restore temporarily changed Developer Mode immediately after the final Flutter build, and verify the previous setting is restored. Packaging the already-built bundle does not require leaving Developer Mode enabled.
+
+**10. Assemble the ancillary Windows payloads and notices**
+
+Implement or adapt and inspect `prepare-windows-extras.ps1` and `assemble-windows-extras.ps1`. They prepare/copy payloads; they do not install drivers.
+
+Use the pinned upstream helper source:
+
+```text
+https://github.com/rustdesk-org/RustDeskTempTopMostWindow
+Commit: ecd8d6a139eee76845ea66423fb739af450fda90
+```
+
+The project can request v142 while the installed C++ tools provide v143. For this pinned helper, a compatible native build can use:
+
+```powershell
+msbuild <helperRoot>\WindowInjection\WindowInjection.vcxproj /p:Configuration=Release /p:Platform=x64 /p:TargetVersion=Windows10 /p:PlatformToolset=v143 /verbosity:minimal
+```
+
+Do not copy the angle-bracket path literally. Use the actual helper root and native MSBuild environment. The result is `WindowInjection\x64\Release\WindowInjection.dll`.
+
+Download and verify these payload archives:
+
+```text
+usbmmidd_v2.zip
+https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip
+SHA256 629b51e9944762bae73948171c65d09a79595cf4c771a82ebc003fbba5b24f51
+
+rustdesk_printer_driver_v4-1.4.zip
+https://github.com/rustdesk/hbb_common/releases/download/driver/rustdesk_printer_driver_v4-1.4.zip
+SHA256 c4cf4d3b48c4d9079b243edc43bb1db03b076282bc259c9f49883e9db20fa8b5
+
+printer_driver_adapter.zip
+https://github.com/rustdesk/hbb_common/releases/download/driver/printer_driver_adapter.zip
+SHA256 e90e5d52c8807b4c6293c78a52479338715e0bf396b1b34802777b8c452e6781
+```
+
+Verify each digest before extraction/use. Compare the printer archive hashes with upstream published checksums as an additional provenance check. If any artifact changes, investigate its official origin rather than bypassing the check.
+
+The assembler must:
+
+- Adds the x64 USB payload under `usbmmidd_v2`, excluding Win32, `deviceinstaller.exe`, `deviceinstaller64.exe` and `usbmmidd.bat` from that root selection.
+- Adds printer payloads under `drivers/RustDeskPrinterDriver` and places `printer_driver_adapter.dll` at bundle root.
+- Places `WindowInjection.dll` at bundle root.
+- Copies upstream `LICENCE` (that spelling) to `LICENCE-RustDesk.txt`.
+- Includes vcpkg dependency copyright notices in `licenses`.
+- Includes the Windows helper's MIT notice as `licenses/RustDeskTempTopMostWindow.txt` and in corresponding source inputs.
+
+Pay particular attention to the helper's MIT notice; copying only vcpkg notices omits it. Preserve notices for every component actually shipped, and include the helper notice in both bundle and source inputs. The notice count is not a substitute for checking the dependency inventory.
+
+From the source checkout:
+
+```powershell
+& ..\build-support\prepare-windows-extras.ps1 -ToolsRoot 'C:\CustomClientBuild'
+$bundle = (Resolve-Path .\flutter\build\windows\x64\runner\Release).Path
+& ..\build-support\assemble-windows-extras.ps1 -BundleDirectory $bundle -ToolsRoot 'C:\CustomClientBuild'
+```
+
+The preparation helper should download into the task-local downloads folder, verify hashes before extraction, clone the helper at its pinned commit, and build with the native environment. The assembly helper should stage extraction under the dedicated tool root and copy only the listed payloads. Keep ordinary payload assembly separate from installing optional USB/display/printer drivers on the computer.
+
+**11. Create the complete executable**
+
+The small Flutter runner EXE is not self-contained. A runner may be only hundreds of kilobytes, while the complete package can be around 30 MB and its extracted/installed application around 80 MB for this recipe. Actual sizes depend on the build. Its DLLs and assets are essential; measure and report the actual complete result.
+
+Use an isolated packaging Python environment:
+
+```powershell
+python -m venv C:\CustomClientBuild\python-env
+& C:\CustomClientBuild\python-env\Scripts\python.exe -m pip install brotli==1.2.0 packaging
+```
+
+`build.py` has a built-in packing path that assumes `rustdesk.exe`. That is why the commands above use `--skip-portable-pack`. Use the existing packer explicitly with the custom executable:
+
+```powershell
+$bundle = (Resolve-Path .\flutter\build\windows\x64\runner\Release).Path
+$packer = (Resolve-Path .\libs\portable).Path
+$AppName = 'CONFIRMED_NAME' # Replace with the owner-approved, validated value.
+$AppExe = $AppName + '.exe'
+$runner = Join-Path $bundle $AppExe
+& C:\CustomClientBuild\python-env\Scripts\python.exe .\libs\portable\generate.py -f $bundle -o $packer -e $runner -l 6
+New-Item -ItemType Directory ..\release -Force | Out-Null
+$releaseExe = Join-Path ..\release ($AppName + '-1.5.0-windows-x64.exe')
+Copy-Item -LiteralPath .\target\release\rustdesk-portable-packer.exe -Destination $releaseExe -Force
+```
+
+Use actual absolute paths; the executable must be inside the source bundle. Compression level 6 was used for practical local packaging. Do not change the packer's technical blob identifiers or FFI names to match the display name. Keep the complete bundle free of stale generated runner outputs from an earlier target.
+
+Record `Get-AuthenticodeSignature` status. If the owner has not supplied an authorized signing certificate, the artifact is unsigned. Do not claim it is signed or disable security features to run it. Do not obtain or expose someone else's signing key.
+
+Produce a source ZIP from the actual modified working files, including expanded pinned submodule source, required ignored/generated icon inputs, helpers and notices, while excluding tool downloads, caches, `.git`, logs and binaries. Include user modifications that would otherwise be lost during cleanup. Implement source archiving for the actual layout; do not assume that generated inputs are tracked by Git. Verify ZIP CRCs and required entries. Write current SHA256 checksums.
+
+For `archive-source.py`, collect the actual working contents of tracked files from the checkout, expand the pinned submodule's source instead of storing only its Git pointer, and explicitly add required ignored image assets and the new helper scripts. Include the selected artwork only if the owner wants it retained with the recovery source. Exclude toolchains, generated target/build trees, large downloads, caches, `.git`, local settings/credentials and unrelated work. Capture later owner edits before deleting a checkout. Verify ZIP CRCs, safe relative entry names, the selected branding files, expanded submodule and license inputs. Keep source/EXE checksums alongside the release report.
+
+Inspect the packer before invocation: it must restore the actual working directory when walking the source tree, and propagate Cargo failures. If it saves `os.curdir` instead of `os.getcwd()`, or invokes Cargo without checking its return status, diagnose the resulting behavior and make only a justified focused fix. Use absolute bundle/packer paths, preserve useful logs and verify the produced wrapper exists and has a fresh build timestamp before copying it into `release`.
+
+**12. Check the newly built artifacts on this computer**
+
+Use the receiving computer's normal security software to check new artifacts before execution. Record signing status and any actual warning accurately; a successful compilation or connection test is not a security verdict. If a new detection occurs, pause deployment, retain its report and investigate the behavior through the product's normal process. Keep protections enabled and do not change names, resources or packaging to evade a detection.
+
+Do not upload binaries or private configuration to an external service without the owner's authorization. Saved source and notes survive an ordinary reboot; save open work and ask before restarting the computer when a tool or security product requires it. Do not assume anything about which antivirus vendor is installed.
+
+**13. Validate packaging and ordinary installation when cleared and authorized**
+
+Keep build success, runtime success, connection success, and security review as distinct results.
+
+For an approved packaged launch, check:
+
+- The wrapper extracts the complete bundle and opens a responsive APP_NAME window.
+- Every extracted runtime file matches the compiled bundle manifest; compare all files, not just the runner.
+- The custom icon is in the actual packaged PNG and ICO lookup paths.
+- Windows product metadata describes the app accurately.
+- Consent prompts and remote-session indicators still function.
+
+Inspect the actual wrapper extraction directory under `%LOCALAPPDATA%\APP_NAMESPACE`. A reported process path can include a redundant `\.\` component; normalize it with `[IO.Path]::GetFullPath` before comparing. Some protected/elevated process paths may be null; guard nulls before normalizing. A path-comparison failure is not evidence that the process did not launch. Normalize both expected and observed paths before drawing that conclusion.
+
+Before installation, inspect both legacy Inno uninstall locations for this exact key:
+
+```text
+{54E86BC2-6C85-41F3-A9EB-1A94AC9B1F93}_is1
+```
+
+Specifically, check it under:
+
+```text
+HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall
+HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall
+```
+
+Upstream's installer has a legacy fallback that can select a stock RustDesk path even for a custom name. If present, do not install this build over it or delete/rename that entry to force the operation. Report the conflict and use a safely isolated test environment or an explicitly reviewed approach. Do not remove someone's existing RustDesk installation as part of this branding task.
+
+Use the app's normal installation/UAC mechanism once the owner has reviewed the result and the security status permits it. Prefer the upstream installation mechanism with optional printer installation disabled unless the owner specifically needs that feature. Be explicit that normal installation can create a remote-support service, startup shortcut and firewall rules. Do not install optional drivers merely because their payloads are bundled.
+
+Verify the actual installed state rather than relying only on a process return code:
+
+- Install directory and complete DLL/asset set.
+- Installed Apps `DisplayName`, `DisplayIcon`, `InstallLocation` and uninstall command.
+- Start Menu/desktop shortcut target and icon.
+- Process name/window title/product description.
+- Service command, status and intended startup mode, if service installation was authorized.
+- Coexistence with any original client and preservation of its configuration.
+
+A normal installed path is `C:\Program Files\APP_NAME\APP_NAME.exe`, subject to the chosen name and upstream installer behavior. Inspect the actual installed path. It must be outside any checkout/tool directory proposed for cleanup.
+
+If a silent install returns `0x40000015` / 1073741845 (`STATUS_FATAL_APP_EXIT`) after copying files and creating a temporary `--import-config` service command, installation has not necessarily completed. Do not report success solely because a shortcut exists. Inspect the service command, logs, security events and pinned installer code to identify the actual current state.
+
+For an incomplete configuration-import service sequence, upstream provides this normal service-install path:
+
+```powershell
+$InstalledExe = 'ACTUAL_VERIFIED_INSTALLED_EXE_PATH'
+& $InstalledExe --install-service
+```
+
+This may require normal UAC and must only run when service installation is in scope, the artifact is appropriate to execute, and the current failure matches this repair. Verify its real exit code, resulting service command using `--service`, status and requested startup mode. Do not apply the repair blindly, invent a cause for an unexplained installer exit, or scramble service/registry names manually to conceal an error.
+
+**14. Configure and test with the existing server**
+
+The cosmetic build should normally remain compatible with an existing free RustDesk server and standard peer client when the protocol/version behavior is preserved. That is a testable expectation, not a blanket guarantee for any server/client combination.
+
+Let the owner enter the server settings locally:
+
+```text
+Settings → Network → ID/Relay Server
+```
+
+Use the friend's ID server and public key, plus a relay server if supplied. Do not request a server private key or unattended password in chat. Branding can create a separate app-data namespace and a new identity; use the ID shown in the custom app rather than assuming the old stock-client ID carries over. Do not copy private identity/password files merely to make the ID match.
+
+Ask both participants to test a consented session. Verify screen display, mouse/keyboard input, approval/connection indicators and clean disconnection. Test other required features only if in scope. Record what was actually tested and any error text without secrets. Only record results actually observed or reported for this new build. If the participants are not ready, leave the test pending and retain the development environment until the owner decides how to proceed.
+
+Do not claim that a UI launch alone proves server connectivity. Do not force the friend to install the custom build if a compatible standard client works.
+
+**15. Prepare a concrete cleanup proposal after successful testing**
+
+Do not delete the development environment before the connection test and requested review are complete. Once they are complete, inventory the actual receiving-machine paths and sizes, separate pre-existing tools from project-installed tools, and present a specific keep/remove list.
+
+Ask a concise question such as:
+
+> The test is successful. May I now uninstall only the tools installed for this project and delete these verified build/download/cache folders, keeping your installed custom app, all settings/identity, shared runtimes and the chosen executable/source backups? Here are the exact paths and estimated recovered space. Would you like the small recovery backups kept?
+
+If the owner already explicitly authorized this exact cleanup contingent on the now-completed test, follow that authorization without redundant confirmation. Actual Windows administrator prompts still apply.
+
+Before any deletion:
+
+1. Verify the complete installed executable lives outside every deletion target. Check running process and service paths. Do not accidentally delete a portable directory that the owner is currently using as the app.
+2. Capture SHA256 manifests for installed files and settings without printing their private contents. Record shared runtime versions, app uninstall metadata, shortcuts and service startup state. Capture current free disk space.
+3. Preserve the actual current source, including later user edits and required ignored assets, in a verified compact archive. Check CRCs and representative modified files. Preserve user-owned work outside this project.
+4. Make a deletion allowlist of exact resolved absolute paths. Verify roots are inside the intended workspace or the explicitly approved dedicated tool directory, are not reparse points, and do not overlap installed-app/config/data/backup paths.
+5. Unlink directory junctions/symlinks without following their targets before recursive removal. Flutter plugin links can point into other locations. Use native PowerShell/filesystem operations with literal paths; do not construct cross-shell recursive deletion commands from enumerated strings.
+6. Do not empty the user's Recycle Bin, clear all of `%TEMP%`, purge shared package caches or remove unrelated software as a shortcut to claiming maximum cleanup.
+
+Uninstall registered products using their own uninstallers. For Visual Studio, identify the exact project-created instance and use its installer against that install path with appropriate quiet/passive and no-restart options. The installer's `setup.exe` does not support bootstrapper-only `--wait`; wait/observe the launched operation correctly. A normal uninstall can remove the project's SDK components as well. Re-query registrations before attempting a separate SDK uninstall.
+
+Only after no other Visual Studio instances remain should you consider removing the standalone Visual Studio Installer introduced for this project. Shared Visual C++ Redistributables are runtime components for applications, not the compiler installation: preserve them. Preserve unrelated Windows Kits content that predates this setup or remains shared. Do not use a broad force-cleanup tool merely because a few shared files remain.
+
+LLVM was registered with an uninstaller inside its dedicated installation. Run the correct uninstaller before deleting its parent tool root, so a broken Installed Apps entry is not left behind. Rust/Flutter/vcpkg/downloads in the isolated root can then be removed once no in-scope tool process needs them. Removing the full compiler environment does not require removing the working app.
+
+If a deletion encounters a lock, inspect what remains. A failed removal can leave only empty directories; inspect the remainder and retry only if the target is still in the approved scope. Do not kill arbitrary applications, disable protection or take ownership of unrelated system directories to erase a zero-byte remnant. Resolve only verified project-related locks or document a negligible residual.
+
+PowerShell 5.1 note: JSON arrays returned by ConvertFrom-Json can become nested if wrapped carelessly in `@(...)`. Assign the converted manifest directly and then iterate its records; verify you are checking every file, not one object containing an array.
+
+After cleanup, verify the installed file manifest, settings and shared runtime registrations again. Check app entry/shortcut targets and pre-cleanup service startup state. Do not launch, restart or reconfigure the app merely to finish cleanup validation. Measure drive free space again and distinguish approximate observed recovery from exact file totals while the OS continues writing.
+
+**16. Cleanup scope and retention policy**
+
+Use actual measurements from this computer. The following categories explain the intended cleanup; they are not permission to delete an unverified example path:
+
+| Category | Cleanup treatment |
+| --- | --- |
+| Dedicated temporary tool root, e.g. `C:\CustomClientBuild` | Remove after registered in-root products are uninstalled, backups verified and no required project process uses it |
+| Project source checkout and generated build output | Remove only after preserving a verified current source archive and any requested owner edits |
+| Generated branding previews and project-only review artifacts | Remove if included in the approved manifest and needed inputs are retained |
+| Project-added Visual Studio C++ Build Tools instance | Use its registered uninstaller for that exact instance; preserve pre-existing instances |
+| Project-added SDK/SDK AddOn/LLVM | Use registered uninstallers where applicable; re-query shared/component ownership first |
+| Standalone Visual Studio Installer introduced by setup | Consider removal only when no remaining instances need it |
+| Installed custom app and its DLLs/assets | Keep intact; verify all recorded file hashes before/after cleanup |
+| App settings, identity, keys, logs and active app-data/extraction directory | Preserve; do not confuse app data with a disposable build cache |
+| Shared Visual C++ Redistributables and unrelated Windows Kits files | Preserve unless independently confirmed to be project-only and explicitly in scope |
+| Complete EXE, compact source archive, checksums and brief build report | Ask the owner which recovery backups to keep |
+| Pre-existing tools, unrelated projects, personal files and private configuration | Exclude from cleanup |
+
+Build space and installed-app space are different categories. Do not promise an 80 MB maximum total footprint: settings, logs, shared runtimes, portable extraction and selected recovery backups can add to the app directory size. Report those separately. A small retained source archive plus a complete executable can make future recovery easier without retaining tens of gigabytes of SDKs and generated output.
+
+Do not delete a portable extraction directory as a presumed duplicate. Confirm whether it is active, whether it contains unique files/settings, and whether the owner authorized its removal. The installed and extracted runners may differ, so compare complete contents rather than relying on the folder name or size.
+
+Cleanup must not silently stop a working app, change its service startup preference or undo the owner's settings. Record the pre-cleanup state and preserve it. If registered uninstallers leave shared or older components, document the small residual rather than forcing a broad system purge.
+
+**17. Final deliverables and reporting**
+
+Provide:
+
+1. Complete executable and source archive with checksums, subject to the security review status.
+2. Short build report recording source/submodule pins, actual tool versions, exact product files changed, why each was needed, real validation and known limits.
+3. Permission/system-setting record, including restoration of temporary Developer Mode.
+4. Connection-test result reported separately from build/runtime/security results.
+5. A concrete cleanup proposal and, only after authorization, actual cleanup with before/after space measurements and preservation checks.
+6. Clear installed-app launch/location/uninstall guidance. For ordinary app removal later, use Installed Apps → the chosen app name → Uninstall, not manual deletion of Program Files before the uninstaller runs.
+
+Keep the owner updated during long operations. State failures candidly, preserve useful logs, and use the smallest justified fix. Do not upload, publish, push a GitHub fork, message the friend or submit a sample externally without the corresponding authorization.
+
+Use an independent read-only review where available for the focused branding and cleanup manifest. Correct introduced problems; do not expand this task into an unrelated rewrite of RustDesk or a different system-management project.
+
+Start by explicitly asking the owner for the exact app name and icon as specified at the top. Then inspect this machine, record the environment baseline and describe the concrete setup/build steps. Ask further concise questions only for inputs or decisions that materially affect execution. Ask for the connection-test result before cleanup, and ask for the actual cleanup choice with a reviewable manifest.
+
+**Official references for the receiving agent to verify**
+
+- Repository: https://github.com/rustdesk/rustdesk
+- Pinned source: https://github.com/rustdesk/rustdesk/tree/fada664df7a294d1d1a9ca3e7cd3637069122f17
+- Release workflow: https://github.com/rustdesk/rustdesk/blob/fada664df7a294d1d1a9ca3e7cd3637069122f17/.github/workflows/flutter-build.yml
+- Windows build documentation: https://rustdesk.com/docs/en/dev/build/windows/
+- Client/server configuration: https://rustdesk.com/docs/en/self-host/client-configuration/
+- Visual Studio command-line parameters: https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=vs-2022
+- Visual Studio removal: https://learn.microsoft.com/en-us/visualstudio/install/uninstall-visual-studio?view=vs-2022
+- Windows app removal: https://support.microsoft.com/en-gb/windows/uninstall-or-remove-apps-and-programs-in-windows-4b55f974-2cc6-2d2b-d092-5905080eaf98
+- Visual C++ runtime explanation: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170
+
+Prefer the pinned source and actual receiving-machine evidence over a changing documentation page. If upstream assets or current operating-system behavior differ, investigate and explain the difference rather than assuming a reference recipe is universally executable.
